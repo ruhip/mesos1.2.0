@@ -6234,9 +6234,31 @@ void Master::forward(
     }
   }
 
+  /*froad 20170518*/
+  LOG(INFO)<<"yes:ready send to framework StatusUpdateMessage";
+  LOG(INFO)<<"yes:task contained id:"<<update.status().task_containerid();
+ 
+  string strContainerid = "sorry,none containerid";
+  string strTaskid=update.status().task_id().value();
+  if( !tasksContainerid.contains(strTaskid) )
+  {
+      if( update.status().task_containerid().length() > 1 )
+	  {
+              tasksContainerid[strTaskid] = update.status().task_containerid();
+	  }
+  }
+  if( tasksContainerid.contains(strTaskid) )
+  {
+      strContainerid = tasksContainerid[strTaskid];
+  }
+  LOG(INFO)<<"yes:task contained id 2:"<<strContainerid;
+
+
   StatusUpdateMessage message;
   message.mutable_update()->MergeFrom(update);
   message.set_pid(acknowledgee);
+  /*froad 20170518*/
+  message.mutable_update()->mutable_status()->set_task_containerid(strContainerid);
   framework->send(message);
 }
 

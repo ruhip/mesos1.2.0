@@ -1659,6 +1659,7 @@ message Task {
 
   // Specific user under which task is running.
   optional string user = 14;
+  optional string containerId = 15;
 }
 
 
@@ -1875,6 +1876,7 @@ message TaskStatus {
   // status updates for tasks running on agents that are unreachable
   // (e.g., partitioned away from the master).
   optional TimeInfo unreachable_time = 14;
+  optional string task_containerId = 16;
 }
 
 

@@ -496,7 +496,8 @@ Future<Option<int>> Docker::run(
     const Option<map<string, string>>& env,
     const Option<vector<Device>>& devices,
     const process::Subprocess::IO& _stdout,
-    const process::Subprocess::IO& _stderr) const
+    const process::Subprocess::IO& _stderr,
+    const std::string& mhostip) const
 {
   if (!containerInfo.has_docker()) {
     return Failure("No docker info found in container info");
@@ -540,6 +541,8 @@ Future<Option<int>> Docker::run(
     }
   }
 
+  std::string sfroad_net="";
+
   foreach (const Environment::Variable& variable,
            commandInfo.environment().variables()) {
     if (env.isSome() &&
@@ -547,12 +550,31 @@ Future<Option<int>> Docker::run(
       // Skip to avoid duplicate environment variables.
       continue;
     }
+   
+    std::string senvName = variable.name();
+    if( strcmp(senvName.c_str(),"froad_net") == 0 )
+    {
+       sfroad_net = variable.value();
+       continue;
+    }
+   
+    if( strcmp(senvName.c_str(),"froad_volume") == 0 ){
+        foreach(const string& volume,strings::tokenize(variable.value(), ",")){
+            argv.push_back("-v");
+            argv.push_back(volume);
+        }
+        continue;
+    }
+
     environmentVariables += variable.name() + "=" + variable.value() + "\n";
   }
 
+    argv.push_back("-v");
+    argv.push_back("/var/lib/lxcfs/proc/:/docker/proc/:rw");
+/*
   environmentVariables += "MESOS_SANDBOX=" + mappedDirectory + "\n";
   environmentVariables += "MESOS_CONTAINER_NAME=" + name + "\n";
-
+*/
   Try<string> environmentFile_ = os::mktemp();
   if (environmentFile_.isError()) {
     return Failure("Failed to create temporary docker environment "
@@ -712,6 +734,10 @@ Future<Option<int>> Docker::run(
                             stringify(dockerInfo.network()));
   }
 
+  if( sfroad_net.length() > 0 )
+  {
+     network = sfroad_net;
+  }
   argv.push_back(network);
 
   if (containerInfo.has_hostname()) {
@@ -725,6 +751,10 @@ Future<Option<int>> Docker::run(
 
   foreach (const Parameter& parameter, dockerInfo.parameters()) {
     argv.push_back("--" + parameter.key() + "=" + parameter.value());
+  }
+  if( mhostip.length() > 0 )
+  {
+    argv.push_back("--env=mHOSTIP="  + mhostip);
   }
 
   if (dockerInfo.port_mappings().size() > 0) {

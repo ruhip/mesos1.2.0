@@ -4244,6 +4244,14 @@ void Slave::forward(StatusUpdate update)
         task->set_status_update_state(update.status().state());
         task->set_status_update_uuid(update.uuid());
 
+
+        /*froad 20170518*/
+        string strcontainerId = executor->containerId.value();
+        strcontainerId = "mesos-" + info.id().value() + "." +  strcontainerId;
+        LOG(INFO)<<"yes:task containerId:"<<strcontainerId;
+        task->set_containerid(strcontainerId);        
+       	update.mutable_status()->set_task_containerid(strcontainerId);
+
         // Include the latest state of task in the update. See the
         // comments in 'statusUpdate()' on why informing the master
         // about the latest state of the task is important.
